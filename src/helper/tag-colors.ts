@@ -7,5 +7,6 @@ export const tagColors: Record<string, string> = {
   'stenciljs': 'bg-blue-600 text-white',
   'babel': 'bg-yellow-300 text-black',
   'javascript': 'bg-yellow-300 text-black',
-  'html': 'bg-orange-500 text-white'
+  'html': 'bg-orange-500 text-white',
+  '名取さな': 'bg-pink-300 text-white'
 };
