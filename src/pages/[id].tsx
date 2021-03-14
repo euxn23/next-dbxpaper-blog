@@ -149,7 +149,7 @@ export const getStaticProps: GetStaticProps<Props, StaticProps> = async (
       return;
     }
 
-    const ogpDOMString = buildOGPDOMString(ogpResult);
+    const ogpDOMString = buildOGPDOMString(el.href, ogpResult);
 
     const ogpEl = new JSDOM(ogpDOMString).window.document.body;
     el.replaceWith(ogpEl);

@@ -1,10 +1,10 @@
 import ogs from 'open-graph-scraper'
 
-export function buildOGPDOMString(ogsResult: ogs.SuccessResult['result']): string {
+export function buildOGPDOMString(originalUrl: string, ogsResult: ogs.SuccessResult['result']): string {
   const hostname = ogsResult.ogUrl ? new URL(ogsResult.ogUrl).hostname : ''
 
   return `\
-    <a href="${ogsResult.ogUrl}" class="flex block border-2 rounded flex-col sm:flex-row bg-white" style="max-width: 36rem; min-height: 8rem">
+    <a href="${originalUrl}" class="flex block border-2 rounded flex-col sm:flex-row bg-white" style="max-width: 36rem; min-height: 8rem">
       ${ogsResult.ogImage && ogsResult.ogImage.url? `
       <div class="flex flex-row sm:flex-col justify-center">
         <div class="w-32">
