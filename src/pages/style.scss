@@ -31,27 +31,33 @@ h3 {
   margin: 0.5rem 0;
 }
 
-.listtype-bullet {
-  list-style-position: inside;
-  padding-left: 0;
+div > p {
+  white-space: pre-line;
+}
 
-  &.list-bullet1,
-  &.list-bullet4,
-  &.list-bullet7 {
+div > ul {
+  margin-left: 1.5rem;
+
+  > li {
     list-style-type: disc;
-  }
-
-  &.list-bullet2,
-  &.list-bullet5,
-  &.list-bullet8 {
-    margin-left: 0.75rem;
-    list-style-type: circle;
-  }
-
-  &.list-bullet3,
-  &.list-bullet6 {
-    margin-left: 1.5rem;
-    list-style-type: square;
+    > ul {
+      margin-left: 1.75rem;
+      > li {
+        list-style-type: circle;
+        > ul {
+          margin-left: 2rem;
+          > li {
+            list-style-type: square;
+            > ul {
+              margin-left: 2.25rem;
+              > li {
+                list-style-type: disc;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 

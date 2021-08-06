@@ -2,23 +2,34 @@ import React from 'react';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { Dropbox } from 'dropbox';
 import fetch from 'isomorphic-unfetch';
-import { JSDOM } from 'jsdom';
 import { entryFilter, normalizeDropboxId } from '../helper';
 import Head from 'next/head';
-import { parseTitle } from '../helper/perser';
 import { TitleObject } from '../types';
 import { CategoryTag } from '../components/category-tag';
-import Interweave from 'interweave';
-import { isMatchImageURL } from '../helper/is-match-image-url';
-import ogs from 'open-graph-scraper';
-import { buildOGPDOMString } from '../helper/build-ogp-domstring';
 import { appImage, appTitle, hostname } from '../constants';
 import dayjs from 'dayjs';
 import { dayJaList } from '../helper/day-ja-list';
+import { parseTitle } from '../helper/perser';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import gfm from 'remark-gfm'
 
-type Props = { html: string; titleObject: TitleObject, entryId: string, canonical: boolean };
+type Props = { content: string, titleObject: TitleObject, entryId: string, canonical: boolean };
 
-export default function Entry({ html, titleObject: { title, date, meta }, entryId, canonical }: Props) {
+const components = {
+  code({node, inline, className, children, ...props}: any) {
+    const match = /language-(\w+)/.exec(className || '')
+    return !inline && match ? (
+      <SyntaxHighlighter language={match[1]} PreTag="div" children={String(children).replace(/\n$/, '')} {...props} />
+    ) : (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    )
+  }
+}
+
+const Entry: React.FC<Props> = ({ content, titleObject: { title, date, meta }, entryId, canonical }) => {
   const fullTitle = `${title} - ${appTitle}`;
   const dateDayjs = dayjs(date);
   const dateString = `${dateDayjs.year()}/${dateDayjs.month() + 1}/${dateDayjs.date()} (${dayJaList[dateDayjs.day()]})`;
@@ -56,7 +67,7 @@ export default function Entry({ html, titleObject: { title, date, meta }, entryI
             ))}
           </div>
         </div>
-        <Interweave content={html} />
+        <ReactMarkdown className="whitespace-normal" components={components as any} remarkPlugins={[gfm]} children={content} />
       </div>
     </>
   );
@@ -101,72 +112,17 @@ export const getStaticProps: GetStaticProps<Props, StaticProps> = async (
   }
 
   const metadata = await dbx.filesExport({
-    path: entry.path_display
+    path: entry.path_display,
+    export_format: 'markdown'
   });
   const buf: Buffer = (metadata.result as any).fileBinary;
+  const mdContentRawStr = buf.toString()
+  const mdContentLines = mdContentRawStr.split("\n")
+  const [titleText, ...contentLines] = mdContentLines
+  const titleObject = parseTitle(titleText.replace(/^#\s/, ''));
+  const content = contentLines.join("\n")
 
-  const { window } = new JSDOM(buf.toString());
-  const { body } = window.document;
-
-  const anchorDOMs = Array.from(body.querySelectorAll('a'));
-
-  const imagesDOMs = anchorDOMs.filter((el) => isMatchImageURL(el.href));
-  const urlDOMs = anchorDOMs.filter((el) => !isMatchImageURL(el.href))
-    .filter((el) => {
-      try {
-        new URL(el.text);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-
-  // replace image url to img tag
-  imagesDOMs.forEach((el) => {
-    const imgEl = window.document.createElement('img');
-    imgEl.src = el.href;
-    imgEl.className = 'w-64';
-    el.replaceWith(imgEl);
-  });
-
-  // extend OGP
-  await Promise.all(urlDOMs.map(async (el) => {
-    if (el.href.match(/twitter\.com/)) {
-      const twitterDOMString = `\
-<div>
-<blockquote class="twitter-tweet">
-  <a href="${el.href}">${el.href}</a>
-</blockquote>
-</div>
-`
-      const twitterEl = new JSDOM(twitterDOMString).window.document.body;
-      el.replaceWith(twitterEl)
-      return;
-    }
-
-    const ogpResult = await ogs({ url: el.href, timeout: 3600 }).then((data) => data.error ? undefined : data.result);
-    if (!ogpResult) {
-      return;
-    }
-
-    const ogpDOMString = buildOGPDOMString(el.href, ogpResult);
-
-    const ogpEl = new JSDOM(ogpDOMString).window.document.body;
-    el.replaceWith(ogpEl);
-  }));
-
-  const titleDOM = body.querySelector<HTMLDivElement>('div.ace-line:first-child');
-  const titleObject = parseTitle(titleDOM?.textContent || undefined);
-  titleDOM?.remove();
-
-  if (titleDOM) {
-    titleDOM.textContent = titleObject.title;
-  }
-
-  const html = `\
-<div>
-${window.document.body.innerHTML}
-</div>`;
-
-  return { props: { html, titleObject, entryId: entryId.toLowerCase(), canonical }, revalidate: 60 };
+  return { props: { content, titleObject, entryId: entryId.toLowerCase(), canonical }, revalidate: 60 };
 };
+
+export default Entry
