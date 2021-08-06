@@ -23,7 +23,7 @@
     "isomorphic-unfetch": "^3.1.0",
     "next": "^11.0.1",
     "open-graph-scraper": "^4.7.1",
-    "postcss": "^8.2.2",
+    "postcss": "^8.2.10",
     "postcss-import": "^14.0.0",
     "postcss-preset-env": "^6.7.0",
     "purgecss": "^3.1.3",
